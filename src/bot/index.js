@@ -1,9 +1,14 @@
+// Este archivo ya no configura el bot.
+// Toda la configuración del bot está en src/config/telegram.js
+
+/*
 const { conversations, createConversation } = require('@grammyjs/conversations');
 const bot = require('../config/telegram');
 const loggerMiddleware = require('./middlewares/logger');
 const sessionMiddleware = require('./middlewares/session');
 const startHandler = require('./handlers/start.handler');
-const { leadMenuHandler, leadInicioHandler } = require('./handlers/lead.handler');
+const { leadMenuHandler, leadInicioHandler } = require('./handlers/lead.handler');// Este archivo ya no configura el bot.
+// Toda la configuración del bot está en src/config/telegram.js
 const { pqrsMenuHandler, pqrsInicioHandler } = require('./handlers/pqrs.handler');
 const { faqMenuHandler, faqRespuestaHandler } = require('./handlers/faq.handler');
 const leadScene = require('./scenes/lead.scene');
@@ -40,3 +45,4 @@ bot.catch((err) => {
 });
 
 module.exports = bot;
+*/
