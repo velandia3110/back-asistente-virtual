@@ -8,7 +8,8 @@ const tipoCargaKeyboard = new InlineKeyboard()
 
 const confirmLeadKeyboard = new InlineKeyboard()
   .text('✅ Confirmar', 'lead_confirmar')
-  .text('✏️ Corregir', 'lead_corregir');
+  .text('✏️ Corregir', 'lead_corregir').row()
+  .text('🏠 Menú principal', 'menu_principal');
 
 const unidadPesoKeyboard = new InlineKeyboard()
   .text('Kilogramos (kg)', 'peso_kg')

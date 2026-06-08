@@ -1,36 +1,41 @@
-require('dotenv').config();  
-require('./src/bot');
+require('dotenv').config();
 
-const env = require('./src/config/env');
-const db = require('./src/config/database');
-const bot = require('./src/config/telegram');
-const app = require('./src/app');
+const env    = require('./src/config/env');
+const db     = require('./src/config/database');
+const bot    = require('./src/config/telegram'); // único punto de configuración del bot
+const app    = require('./src/app');
 const logger = require('./src/utils/logger');
-const { webhookCallback } = require('grammy');
 
-const PORT = env.PORT;
-const WEBHOOK_PATH = `/webhook/${env.TELEGRAM_BOT_TOKEN}`;
+const PORT = env.PORT || 3000;
 
 async function start() {
   try {
+    // ── Base de datos ─────────────────────────────────────────────────────────
     await db.raw('SELECT 1');
-    logger.info('Conexión a la base de datos exitosa');
+    logger.info('✅ Conexión a la base de datos exitosa');
 
-    if (env.WEBHOOK_URL) {
-      app.use(webhookCallback(bot, { path: WEBHOOK_PATH }));
+    // ── Bot: webhook (producción) o polling (desarrollo) ──────────────────────
+    if (env.NODE_ENV === 'production' && env.WEBHOOK_URL) {
+      const { webhookCallback } = require('grammy');
+      const WEBHOOK_PATH = `/webhook/${env.TELEGRAM_BOT_TOKEN}`;
+
+      app.use(WEBHOOK_PATH, webhookCallback(bot, 'express'));
       await bot.api.setWebhook(`${env.WEBHOOK_URL}${WEBHOOK_PATH}`);
-      logger.info(`Webhook registrado en ${env.WEBHOOK_URL}${WEBHOOK_PATH}`);
+      logger.info(`✅ Bot en modo webhook: ${env.WEBHOOK_URL}${WEBHOOK_PATH}`);
     } else {
       await bot.api.deleteWebhook();
-      bot.start();
-      logger.info('Bot usando polling (modo desarrollo)');
+      bot.start({
+        onStart: (info) => logger.info(`✅ Bot en modo polling: @${info.username}`),
+      });
     }
 
+    // ── API REST ──────────────────────────────────────────────────────────────
     app.listen(PORT, () => {
-      logger.info(`Servidor corriendo en el puerto ${PORT}`);
+      logger.info(`✅ API escuchando en puerto ${PORT}`);
     });
+
   } catch (err) {
-    logger.error(`Error al iniciar: ${err.message}`);
+    logger.error(`❌ Error al iniciar: ${err.message}`);
     process.exit(1);
   }
 }
