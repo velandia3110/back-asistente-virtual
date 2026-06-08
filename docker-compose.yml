@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   postgres:
-    image: postgres:16-alpine   # imagen ligera y actual
+    image: postgres:16-alpine  
     container_name: gruizajes-db
     restart: unless-stopped
     environment:
@@ -10,9 +10,9 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: devpassword123
     ports:
-      - "5432:5432"             # mapea el puerto estándar a tu máquina
+      - "5432:5432"             
     volumes:
-      - pgdata:/var/lib/postgresql/data   # persistencia de datos
+      - pgdata:/var/lib/postgresql/data   
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d gruizajes"]
       interval: 10s

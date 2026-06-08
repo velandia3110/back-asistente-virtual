@@ -1,0 +1,230 @@
+{
+  "info": {
+    "name": "Gruizajes Bot – API Collection",
+    "description": "Colección de peticiones para probar la API REST del asistente virtual de Gruizajes. Compatible con Postman, Thunder Client, Insomnia y Selenium.",
+    "version": "1.0.0"
+  },
+  "variables": {
+    "BASE_URL": "http://localhost:3000",
+    "TOKEN": ""
+  },
+  "requests": [
+
+    {
+      "name": "① Health Check",
+      "method": "GET",
+      "url": "{{BASE_URL}}/health",
+      "headers": {},
+      "body": null,
+      "expected_response": {
+        "status": 200,
+        "body": { "status": "ok" }
+      }
+    },
+
+    {
+      "name": "② Login – Credenciales válidas",
+      "method": "POST",
+      "url": "{{BASE_URL}}/api/auth/login",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "email": "admin@gruizajes.com",
+        "password": "Admin123!"
+      },
+      "expected_response": {
+        "status": 200,
+        "body": {
+          "token": "eyJhbGciOiJIUzI1NiIs... (JWT)",
+          "admin": {
+            "id": "uuid",
+            "email": "admin@gruizajes.com",
+            "rol": "admin"
+          }
+        }
+      },
+      "note": "Copiar el token de la respuesta y usarlo en las siguientes peticiones"
+    },
+
+    {
+      "name": "③ Login – Credenciales inválidas",
+      "method": "POST",
+      "url": "{{BASE_URL}}/api/auth/login",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "email": "noexiste@gruizajes.com",
+        "password": "wrongpassword"
+      },
+      "expected_response": {
+        "status": 401,
+        "body": { "error": "Credenciales inválidas" }
+      }
+    },
+
+    {
+      "name": "④ Listar Leads (con paginación)",
+      "method": "GET",
+      "url": "{{BASE_URL}}/api/leads?page=1&limit=20",
+      "headers": {
+        "Authorization": "Bearer {{TOKEN}}",
+        "Content-Type": "application/json"
+      },
+      "body": null,
+      "expected_response": {
+        "status": 200,
+        "body": {
+          "data": [
+            {
+              "id_quote": "uuid",
+              "nombre": "Juan Pérez",
+              "telefono": "3001234567",
+              "tipo_carga": "industrial",
+              "peso_kg": 5000,
+              "altura_m": 20,
+              "radio_m": 15,
+              "ubicacion": "Sogamoso",
+              "estado": "nuevo"
+            }
+          ]
+        }
+      }
+    },
+
+    {
+      "name": "⑤ Listar Leads filtrados por estado",
+      "method": "GET",
+      "url": "{{BASE_URL}}/api/leads?page=1&limit=10&estado=nuevo",
+      "headers": {
+        "Authorization": "Bearer {{TOKEN}}"
+      },
+      "body": null,
+      "expected_response": {
+        "status": 200,
+        "body": { "data": [] }
+      }
+    },
+
+    {
+      "name": "⑥ Actualizar estado de Lead",
+      "method": "PATCH",
+      "url": "{{BASE_URL}}/api/leads/{id_quote}/estado",
+      "headers": {
+        "Authorization": "Bearer {{TOKEN}}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "estado": "contactado"
+      },
+      "note": "Reemplazar {id_quote} por un UUID real obtenido del listado de leads",
+      "expected_response": {
+        "status": 200,
+        "body": { "mensaje": "Estado actualizado" }
+      }
+    },
+
+    {
+      "name": "⑦ Listar PQRS (con paginación)",
+      "method": "GET",
+      "url": "{{BASE_URL}}/api/pqrs?page=1&limit=20",
+      "headers": {
+        "Authorization": "Bearer {{TOKEN}}"
+      },
+      "body": null,
+      "expected_response": {
+        "status": 200,
+        "body": {
+          "data": [
+            {
+              "id_pqrs": "uuid",
+              "radicado": "PQRS-XXXXX",
+              "tipo": "peticion",
+              "descripcion": "Solicito información sobre servicios de grúa",
+              "estado": "abierta",
+              "client_id": "uuid"
+            }
+          ]
+        }
+      }
+    },
+
+    {
+      "name": "⑧ Listar PQRS filtradas por estado",
+      "method": "GET",
+      "url": "{{BASE_URL}}/api/pqrs?estado=abierta&page=1&limit=10",
+      "headers": {
+        "Authorization": "Bearer {{TOKEN}}"
+      },
+      "body": null,
+      "expected_response": {
+        "status": 200,
+        "body": { "data": [] }
+      }
+    },
+
+    {
+      "name": "⑨ Actualizar estado de PQRS",
+      "method": "PATCH",
+      "url": "{{BASE_URL}}/api/pqrs/{id_pqrs}/estado",
+      "headers": {
+        "Authorization": "Bearer {{TOKEN}}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "estado": "en_proceso"
+      },
+      "note": "Reemplazar {id_pqrs} por un UUID real obtenido del listado de PQRS. Estados posibles: abierta, en_proceso, resuelta, cerrada",
+      "expected_response": {
+        "status": 200,
+        "body": { "mensaje": "Estado de PQRS actualizado" }
+      }
+    },
+
+    {
+      "name": "⑩ Resumen de estadísticas",
+      "method": "GET",
+      "url": "{{BASE_URL}}/api/stats/resumen",
+      "headers": {
+        "Authorization": "Bearer {{TOKEN}}"
+      },
+      "body": null,
+      "expected_response": {
+        "status": 200,
+        "body": {
+          "total_leads": 42,
+          "total_pqrs": 15,
+          "total_clientes": 38,
+          "leads_hoy": 3
+        }
+      }
+    },
+
+    {
+      "name": "⑪ Petición sin token (debe fallar)",
+      "method": "GET",
+      "url": "{{BASE_URL}}/api/leads",
+      "headers": {},
+      "body": null,
+      "expected_response": {
+        "status": 401,
+        "body": { "error": "Token no proporcionado" }
+      }
+    },
+
+    {
+      "name": "⑫ Petición con token inválido (debe fallar)",
+      "method": "GET",
+      "url": "{{BASE_URL}}/api/leads",
+      "headers": {
+        "Authorization": "Bearer token-falso-12345"
+      },
+      "body": null,
+      "expected_response": {
+        "status": 401,
+        "body": { "error": "Token inválido o expirado" }
+      }
+    }
+  ]
+}
