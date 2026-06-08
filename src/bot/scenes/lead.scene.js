@@ -1,6 +1,6 @@
 const leadService = require('../../services/lead.service');
 const leadRepo = require('../../repositories/lead.repo');
-const { tipoCargaKeyboard, confirmLeadKeyboard } = require('../keyboards/lead.keyboard');
+const { tipoCargaKeyboard, confirmLeadKeyboard, correctionFieldsKeyboard } = require('../keyboards/lead.keyboard');
 const { mainKeyboard } = require('../keyboards/main.keyboard');
 const { formatLead } = require('../../utils/formatters');
 const { parsePositiveNumber, parsePhone, parseText } = require('../../utils/validators');
@@ -128,50 +128,164 @@ async function leadScene(conversation, ctx) {
   data.latitud = ubicacion.latitud;
   data.longitud = ubicacion.longitud;
 
-  // ── Confirmación ──────────────────────────────────────────────────────────
-  await ctx.reply(
-    `📋 *Resumen de tu solicitud:*\n\n${formatLead(data)}\n\n¿La información es correcta?`,
-    {
-      parse_mode: 'Markdown',
-      reply_markup: confirmLeadKeyboard,
+  // ── Confirmación y correcciones ──────────────────────────────────────────
+  while (true) {
+    await ctx.reply(
+      `📋 *Resumen de tu solicitud:*\n\n${formatLead(data)}\n\n¿La información es correcta?`,
+      {
+        parse_mode: 'Markdown',
+        reply_markup: confirmLeadKeyboard,
+      }
+    );
+
+    const confirmCtx = await conversation.waitFor('callback_query:data');
+    await confirmCtx.answerCallbackQuery();
+
+    const action = confirmCtx.callbackQuery.data;
+
+    if (action === 'lead_confirmar') {
+      data.telegram_id = String(ctx.from.id);
+
+      try {
+        await leadService.crear(data);
+
+        await ctx.reply(
+          '✅ *¡Solicitud enviada con éxito!*\n\n' +
+          'Nuestro equipo comercial se pondrá en contacto contigo pronto.\n\n' +
+          '¿Qué deseas hacer ahora?',
+          {
+            parse_mode: 'Markdown',
+            reply_markup: { ...mainKeyboard },
+          }
+        );
+      } catch (err) {
+        console.error(err);
+
+        await ctx.reply(
+          '❌ Ocurrió un error al enviar tu solicitud.\n\n¿Qué deseas hacer ahora?',
+          {
+            reply_markup: mainKeyboard,
+          }
+        );
+      }
+
+      return;
     }
-  );
 
-  const confirmCtx = await conversation.waitFor('callback_query:data');
-  await confirmCtx.answerCallbackQuery();
-
-  if (confirmCtx.callbackQuery.data === 'lead_confirmar') {
-    data.telegram_id = String(ctx.from.id);
-
-    try {
-      await leadService.crear(data);
-
+    if (action === 'lead_cancelar') {
       await ctx.reply(
-        '✅ *¡Solicitud enviada con éxito!*\n\n' +
-        'Nuestro equipo comercial se pondrá en contacto contigo pronto.\n\n' +
-        '¿Qué deseas hacer ahora?',
-        {
-          parse_mode: 'Markdown',
-          reply_markup: { ...mainKeyboard },
-        }
-      );
-    } catch (err) {
-      console.error(err);
-
-      await ctx.reply(
-        '❌ Ocurrió un error al enviar tu solicitud.\n\n¿Qué deseas hacer ahora?',
+        'Entendido, tu solicitud fue cancelada.\n\n¿Qué deseas hacer ahora?',
         {
           reply_markup: mainKeyboard,
         }
       );
+
+      return;
     }
-  } else {
-    await ctx.reply(
-      'Entendido, tu solicitud fue cancelada.\n\n¿Qué deseas hacer ahora?',
-      {
-        reply_markup: mainKeyboard,
+
+    if (action === 'lead_corregir') {
+      await ctx.reply('Selecciona el dato que deseas corregir:', {
+        reply_markup: correctionFieldsKeyboard,
+      });
+
+      const fieldCtx = await conversation.waitFor('callback_query:data');
+      await fieldCtx.answerCallbackQuery();
+
+      const field = fieldCtx.callbackQuery.data;
+
+      if (field === 'lead_volver_resumen') {
+        continue;
       }
-    );
+
+      if (field === 'edit_nombre') {
+        await ctx.reply('👤 Ingresa tu nombre completo:');
+        const nuevoNombre = await pedirTexto(conversation, ctx, {
+          min: 2,
+          max: 100,
+          error: '❌ Nombre inválido. Ingresa tu nombre completo (mínimo 2 caracteres).',
+        });
+        if (nuevoNombre) data.nombre = nuevoNombre;
+        continue;
+      }
+
+      if (field === 'edit_telefono') {
+        await ctx.reply('📞 Ingresa tu número de teléfono o WhatsApp:\n_Ejemplo: 3001234567_', {
+          parse_mode: 'Markdown',
+        });
+        const nuevoTelefono = await pedirCampo(conversation, ctx, {
+          parser: parsePhone,
+          error: '❌ Teléfono inválido. Ingresa 10 dígitos, ejemplo: *3001234567*',
+        });
+        if (nuevoTelefono) data.telefono = nuevoTelefono;
+        continue;
+      }
+
+      if (field === 'edit_tipo_carga') {
+        await ctx.reply('📦 Selecciona el tipo de carga:', {
+          reply_markup: tipoCargaKeyboard,
+        });
+        const cargaCtx = await conversation.waitFor('callback_query:data');
+        await cargaCtx.answerCallbackQuery();
+        data.tipo_carga = cargaCtx.callbackQuery.data.replace('carga_', '');
+        continue;
+      }
+
+      if (field === 'edit_peso') {
+        await ctx.reply('⚖️ Ingresa el peso de la carga en kg (solo número):', {
+          parse_mode: 'Markdown',
+        });
+        const nuevoPeso = await pedirNumero(conversation, ctx, {
+          error: '❌ Peso inválido. Ingresa un número positivo en kg. Ejemplo: *5000*',
+        });
+        if (nuevoPeso !== null) data.peso_kg = nuevoPeso;
+        continue;
+      }
+
+      if (field === 'edit_altura') {
+        await ctx.reply('📏 Ingresa la altura en metros (solo número):', {
+          parse_mode: 'Markdown',
+        });
+        const nuevaAltura = await pedirNumero(conversation, ctx, {
+          error: '❌ Altura inválida. Ingresa un número positivo en metros. Ejemplo: *25*',
+        });
+        if (nuevaAltura !== null) data.altura_m = nuevaAltura;
+        continue;
+      }
+
+      if (field === 'edit_radio') {
+        await ctx.reply('🔄 Ingresa el radio de operación en metros (solo número):', {
+          parse_mode: 'Markdown',
+        });
+        const nuevoRadio = await pedirNumero(conversation, ctx, {
+          error: '❌ Radio inválido. Ingresa un número positivo en metros. Ejemplo: *15*',
+        });
+        if (nuevoRadio !== null) data.radio_m = nuevoRadio;
+        continue;
+      }
+
+      if (field === 'edit_ubicacion') {
+        const locationKeyboard = {
+          keyboard: [[
+            { text: '📍 Compartir ubicación GPS', request_location: true }
+          ]],
+          resize_keyboard: true,
+          one_time_keyboard: true,
+        };
+
+        await ctx.reply(
+          '📍 Comparte tu ubicación GPS o escribe la dirección:',
+          { reply_markup: locationKeyboard }
+        );
+
+        const nuevaUbicacion = await pedirUbicacion(conversation, ctx);
+        if (nuevaUbicacion) {
+          data.ubicacion = nuevaUbicacion.ubicacion;
+          data.latitud = nuevaUbicacion.latitud;
+          data.longitud = nuevaUbicacion.longitud;
+        }
+        continue;
+      }
+    }
   }
 }
 
