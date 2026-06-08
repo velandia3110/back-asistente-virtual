@@ -15,7 +15,7 @@ async function startHandler(ctx) {
 
 /**
  * Vuelve al menú principal desde cualquier punto.
- * Disparado por: callback_query menu_inicio
+ * Disparado por: callback_query menu_principal
  */
 async function menuPrincipalHandler(ctx) {
   if (ctx.callbackQuery) await ctx.answerCallbackQuery();

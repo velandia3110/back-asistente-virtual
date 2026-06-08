@@ -32,7 +32,9 @@ async function pqrsTipoHandler(ctx) {
   if (!tipo) return;
 
   // Guardamos el tipo en sesión para que la escena lo lea
-  ctx.session.pqrsData = { tipo };
+  if (!ctx.session) ctx.session = {};
+  if (!ctx.session.pqrsData) ctx.session.pqrsData = {};
+  ctx.session.pqrsData.tipo = tipo;
 
   await ctx.conversation.enter('pqrsScene');
 }

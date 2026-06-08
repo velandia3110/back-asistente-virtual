@@ -3,12 +3,18 @@ const env = require('../config/env');
 const { formatLead, formatLeadNotificacion, formatPqrs, formatDate } = require('../utils/formatters');
 const logger = require('../utils/logger');
 
-const transporter = nodemailer.createTransport({
-  host:   env.SMTP_HOST,
-  port:   Number(env.SMTP_PORT),
-  secure: false,
-  auth:   { user: env.SMTP_USER, pass: env.SMTP_PASS },
-});
+// Solo crear transporter si tenemos credenciales SMTP configuradas
+let transporter = null;
+if (env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASS) {
+  transporter = nodemailer.createTransport({
+    host: env.SMTP_HOST,
+    port: Number(env.SMTP_PORT),
+    secure: false,
+    auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
+  });
+} else {
+  logger.warn('⚠️  SMTP no configurado. Los emails no se enviarán (solo registrados en logs)');
+}
 
 // ── Helpers internos ──────────────────────────────────────────────────────────
 
@@ -23,7 +29,10 @@ function htmlWrap(text) {
 // ── Notificaciones ────────────────────────────────────────────────────────────
 
 async function notificarNuevoLead(lead) {
-  if (!env.EMAIL_COMERCIAL) return;
+  if (!transporter || !env.EMAIL_COMERCIAL) {
+    logger.warn('📧 Email de nuevo lead no enviado (SMTP no configurado)');
+    return;
+  }
   try {
     const cuerpo = formatLeadNotificacion(lead);
     await transporter.sendMail({
@@ -41,7 +50,10 @@ async function notificarNuevoLead(lead) {
 }
 
 async function notificarNuevaPqrs(pqrs) {
-  if (!env.EMAIL_COMERCIAL) return;
+  if (!transporter || !env.EMAIL_COMERCIAL) {
+    logger.warn('📧 Email de PQRS no enviado (SMTP no configurado)');
+    return;
+  }
   try {
     const lineas = [
       `Radicado : ${pqrs.radicado}`,
@@ -69,7 +81,10 @@ async function notificarNuevaPqrs(pqrs) {
 }
 
 async function notificarNuevoLead_Asesor({ nombre, telefono, consulta }) {
-  if (!env.EMAIL_COMERCIAL) return;
+  if (!transporter || !env.EMAIL_COMERCIAL) {
+    logger.warn('📧 Email de asesor no enviado (SMTP no configurado)');
+    return;
+  }
   try {
     const lineas = [
       `SOLICITUD DE ASESOR — ATENCIÓN INMEDIATA`,

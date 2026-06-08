@@ -64,7 +64,7 @@ async function pqrsConsultaScene(conversation, ctx) {
     const volverKeyboard = {
       inline_keyboard: [[
         { text: '🔍 Consultar otro radicado', callback_data: 'menu_consultar_pqrs' },
-        { text: '🏠 Menú principal',          callback_data: 'menu_inicio' },
+        { text: '🏠 Menú principal',          callback_data: 'menu_principal' },
       ]],
     };
 

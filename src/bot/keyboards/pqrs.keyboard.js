@@ -8,6 +8,7 @@ const tipoPqrsKeyboard = new InlineKeyboard()
 
 const confirmPqrsKeyboard = new InlineKeyboard()
   .text('✅ Enviar PQRS', 'pqrs_confirmar')
-  .text('❌ Cancelar',    'pqrs_cancelar');
+  .text('❌ Cancelar',    'pqrs_cancelar').row()
+  .text('🏠 Menú principal', 'menu_principal');
 
 module.exports = { tipoPqrsKeyboard, confirmPqrsKeyboard };

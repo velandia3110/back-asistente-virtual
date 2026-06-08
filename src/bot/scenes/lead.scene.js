@@ -1,35 +1,63 @@
 const leadService = require('../../services/lead.service');
+const leadRepo = require('../../repositories/lead.repo');
 const { tipoCargaKeyboard, confirmLeadKeyboard } = require('../keyboards/lead.keyboard');
+const { mainKeyboard } = require('../keyboards/main.keyboard');
 const { formatLead } = require('../../utils/formatters');
 const { parsePositiveNumber, parsePhone, parseText } = require('../../utils/validators');
+const { InlineKeyboard } = require('grammy');
 
 // Intentos máximos por campo antes de abandonar el flujo
 const MAX_INTENTOS = 3;
 
 async function leadScene(conversation, ctx) {
   const data = {};
+  const telegramId = String(ctx.from.id);
+  const cliente = await leadRepo.buscarClientePorTelegram(telegramId);
+
+  if (cliente) {
+    const opcionesCliente = new InlineKeyboard()
+      .text('✅ Continuar', 'client_use_data')
+      .text('✏️ Actualizar datos', 'client_update_data');
+
+    await ctx.reply(
+      `👤 Tenemos registrados los siguientes datos:\n\nNombre: ${cliente.nombre}\nTeléfono: ${cliente.telefono}\n\n¿Deseas utilizarlos?`,
+      { reply_markup: opcionesCliente }
+    );
+
+    const opcionCtx = await conversation.waitFor('callback_query:data');
+    await opcionCtx.answerCallbackQuery();
+
+    if (opcionCtx.callbackQuery.data === 'client_use_data') {
+      data.nombre = cliente.nombre;
+      data.telefono = cliente.telefono;
+    }
+  }
 
   // ── Nombre ────────────────────────────────────────────────────────────────
-  await ctx.reply('👤 ¿Cuál es tu nombre completo?');
-  data.nombre = await pedirTexto(conversation, ctx, {
-    min: 2,
-    max: 100,
-    error: '❌ Nombre inválido. Por favor ingresa tu nombre completo (mínimo 2 caracteres).',
-  });
-  if (!data.nombre) return;
+  if (!data.nombre) {
+    await ctx.reply('👤 ¿Cuál es tu nombre completo?');
+    data.nombre = await pedirTexto(conversation, ctx, {
+      min: 2,
+      max: 100,
+      error: '❌ Nombre inválido. Por favor ingresa tu nombre completo (mínimo 2 caracteres).',
+    });
+    if (!data.nombre) return;
+  }
 
   // ── Teléfono ──────────────────────────────────────────────────────────────
-  await ctx.reply(
-    '📞 ¿Cuál es tu número de teléfono o WhatsApp?\n_Ejemplo: 3001234567_',
-    { parse_mode: 'Markdown' }
-  );
+  if (!data.telefono) {
+    await ctx.reply(
+      '📞 ¿Cuál es tu número de teléfono o WhatsApp?\n_Ejemplo: 3001234567_',
+      { parse_mode: 'Markdown' }
+    );
 
-  data.telefono = await pedirCampo(conversation, ctx, {
-    parser: parsePhone,
-    error: '❌ Teléfono inválido. Ingresa 10 dígitos, ejemplo: *3001234567*',
-  });
+    data.telefono = await pedirCampo(conversation, ctx, {
+      parser: parsePhone,
+      error: '❌ Teléfono inválido. Ingresa 10 dígitos, ejemplo: *3001234567*',
+    });
 
-  if (!data.telefono) return;
+    if (!data.telefono) return;
+  }
 
   // ── Tipo de carga ─────────────────────────────────────────────────────────
   await ctx.reply('📦 ¿Qué tipo de carga necesitas izar?', {
@@ -121,28 +149,27 @@ async function leadScene(conversation, ctx) {
       await ctx.reply(
         '✅ *¡Solicitud enviada con éxito!*\n\n' +
         'Nuestro equipo comercial se pondrá en contacto contigo pronto.\n\n' +
-        'Escribe /inicio si necesitas algo más.',
+        '¿Qué deseas hacer ahora?',
         {
           parse_mode: 'Markdown',
-          reply_markup: { remove_keyboard: true },
+          reply_markup: { ...mainKeyboard },
         }
       );
     } catch (err) {
       console.error(err);
 
       await ctx.reply(
-        '❌ Ocurrió un error al enviar tu solicitud.\n\n' +
-        'Escribe /inicio para volver al menú.',
+        '❌ Ocurrió un error al enviar tu solicitud.\n\n¿Qué deseas hacer ahora?',
         {
-          reply_markup: { remove_keyboard: true },
+          reply_markup: mainKeyboard,
         }
       );
     }
   } else {
     await ctx.reply(
-      'Entendido, tu solicitud fue cancelada.\n\nEscribe /inicio para comenzar de nuevo.',
+      'Entendido, tu solicitud fue cancelada.\n\n¿Qué deseas hacer ahora?',
       {
-        reply_markup: { remove_keyboard: true },
+        reply_markup: mainKeyboard,
       }
     );
   }
@@ -173,7 +200,8 @@ async function pedirNumero(conversation, ctx, { error }) {
   }
 
   await ctx.reply(
-    '❌ Demasiados intentos fallidos. Escribe /inicio para empezar de nuevo.'
+    '❌ Demasiados intentos fallidos.\n\n¿Qué deseas hacer ahora?',
+    { reply_markup: mainKeyboard }
   );
 
   return null;
@@ -200,7 +228,8 @@ async function pedirCampo(conversation, ctx, { parser, error }) {
   }
 
   await ctx.reply(
-    '❌ Demasiados intentos fallidos. Escribe /inicio para empezar de nuevo.'
+    '❌ Demasiados intentos fallidos.\n\n¿Qué deseas hacer ahora?',
+    { reply_markup: mainKeyboard }
   );
 
   return null;
@@ -227,7 +256,8 @@ async function pedirTexto(conversation, ctx, { min, max, error }) {
   }
 
   await ctx.reply(
-    '❌ Demasiados intentos fallidos. Escribe /inicio para empezar de nuevo.'
+    '❌ Demasiados intentos fallidos.\n\n¿Qué deseas hacer ahora?',
+    { reply_markup: mainKeyboard }
   );
 
   return null;
@@ -267,7 +297,8 @@ async function pedirUbicacion(conversation, ctx) {
   }
 
   await ctx.reply(
-    '❌ Demasiados intentos fallidos. Escribe /inicio para empezar de nuevo.'
+    '❌ Demasiados intentos fallidos.\n\n¿Qué deseas hacer ahora?',
+    { reply_markup: mainKeyboard }
   );
 
   return null;

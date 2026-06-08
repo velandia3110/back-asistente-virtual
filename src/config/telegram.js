@@ -45,7 +45,6 @@ bot.callbackQuery('menu_cotizacion', async (ctx) => {
 bot.callbackQuery('menu_pqrs',           pqrsMenuHandler);
 bot.callbackQuery('menu_consultar_pqrs', pqrsConsultarHandler);
 bot.callbackQuery('menu_faq',            faqHandler);
-bot.callbackQuery('menu_inicio',         menuPrincipalHandler);
 
 bot.callbackQuery('menu_asesor', async (ctx) => {
   await ctx.answerCallbackQuery();
@@ -60,6 +59,15 @@ bot.callbackQuery(
 
 // ── 7. Callback queries — FAQ (id dinámico desde BD) ─────────────────────────
 bot.callbackQuery(/^faq_/, faqRespuestaHandler);
+
+// ── 8. Callback global — volver al menú principal ──────────────────────────────
+bot.callbackQuery('menu_principal', async (ctx) => {
+  await ctx.answerCallbackQuery();
+  await ctx.reply(
+    '¿En qué te puedo ayudar?',
+    { reply_markup: mainKeyboard }
+  );
+});
 
 // ── 8. Mensajes de texto SIN escena activa ────────────────────────────────────
 // IMPORTANTE: este handler solo se ejecuta cuando no hay ninguna conversación
@@ -83,8 +91,9 @@ bot.on('message:location', async (ctx) => {
 bot.catch((err) => {
   const { ctx, error } = err;
   logger.error(`Error en bot [${ctx?.updateType}]: ${error?.message || error}`);
-  ctx?.reply('❌ Ocurrió un error inesperado. Escribe /inicio para volver al menú.')
-    .catch(() => {});
+  ctx?.reply('❌ Ocurrió un error inesperado.\n\n¿Qué deseas hacer ahora?', {
+    reply_markup: mainKeyboard,
+  }).catch(() => {});
 });
 
 module.exports = bot;

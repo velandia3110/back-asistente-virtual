@@ -32,7 +32,7 @@ async function faqHandler(ctx) {
         text: f.pregunta,
         callback_data: `faq_${f.id_faq}`,
       }]),
-      [{ text: '🏠 Volver al menú', callback_data: 'menu_inicio' }],
+      [{ text: '🏠 Volver al menú', callback_data: 'menu_principal' }],
     ],
   };
 
@@ -61,7 +61,8 @@ async function faqRespuestaHandler(ctx) {
 
   if (!faq) {
     await ctx.reply(
-      'No encontré esa pregunta.\n\nEscribe /inicio para volver al menú.'
+      '❌ No encontré esa pregunta.\n\n¿Qué deseas hacer ahora?',
+      { reply_markup: mainKeyboard }
     );
     return;
   }
@@ -69,7 +70,7 @@ async function faqRespuestaHandler(ctx) {
   const volverKeyboard = {
     inline_keyboard: [[
       { text: '↩️ Ver más preguntas', callback_data: 'menu_faq' },
-      { text: '🏠 Menú principal',    callback_data: 'menu_inicio' },
+      { text: '🏠 Menú principal',    callback_data: 'menu_principal' },
     ]],
   };
 
