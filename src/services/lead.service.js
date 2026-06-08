@@ -59,6 +59,10 @@ async function actualizarEstado(quoteId, estado) {
   return leadRepo.actualizarEstado(quoteId, estado);
 }
 
+async function eliminar(quoteId) {
+  return leadRepo.eliminar(quoteId);
+}
+
 /**
  * Devuelve todas las cotizaciones de un usuario por telegram_id.
  * Usado para "Consultar estado de cotización" en el bot.
@@ -67,4 +71,4 @@ async function consultarPorTelegram(telegramId) {
   return leadRepo.buscarCotizacionesPorTelegram(telegramId);
 }
 
-module.exports = { crear, listar, actualizarEstado, consultarPorTelegram };
+module.exports = { crear, listar, actualizarEstado, eliminar, consultarPorTelegram };

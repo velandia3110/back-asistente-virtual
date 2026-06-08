@@ -17,4 +17,12 @@ async function actualizarEstado(req, res, next) {
   } catch (err) { next(err); }
 }
 
-module.exports = { listar, actualizarEstado };
+async function eliminar(req, res, next) {
+  try {
+    const { id } = req.params;
+    await pqrsService.eliminar(id);
+    res.json({ mensaje: 'PQRS eliminada' });
+  } catch (err) { next(err); }
+}
+
+module.exports = { listar, actualizarEstado, eliminar };

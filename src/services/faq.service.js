@@ -1,11 +1,15 @@
 const faqRepo = require('../repositories/faq.repo');
 
-async function getAll() {
-  return faqRepo.getAll();
+async function listar() {
+  return faqRepo.listarTodos();
 }
 
-async function getById(id) {
-  return faqRepo.getById(id);
+async function actualizar(id, datos) {
+  return faqRepo.actualizar(id, datos);
 }
 
-module.exports = { getAll, getById };
+async function toggleActivo(id, activo) {
+  return faqRepo.toggleActivo(id, activo);
+}
+
+module.exports = { listar, actualizar, toggleActivo };

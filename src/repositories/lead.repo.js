@@ -72,6 +72,10 @@ async function actualizarEstado(quoteId, estado) {
     .update({ estado_comercial: estado });
 }
 
+async function eliminar(quoteId) {
+  return db('quotes').where({ id_quote: quoteId }).delete();
+}
+
 module.exports = {
   crearCliente,
   actualizarCliente,
@@ -80,4 +84,5 @@ module.exports = {
   listarLeads,
   buscarCotizacionesPorTelegram,
   actualizarEstado,
+  eliminar,
 };

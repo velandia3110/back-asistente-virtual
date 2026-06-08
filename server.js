@@ -35,7 +35,7 @@ async function start() {
     });
 
   } catch (err) {
-    logger.error(`❌ Error al iniciar: ${err.message}`);
+    logger.error(`❌ Error al iniciar: ${err.message || err}`, { stack: err.stack });
     process.exit(1);
   }
 }

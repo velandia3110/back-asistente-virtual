@@ -61,4 +61,8 @@ async function actualizarEstado(pqrsId, estado, observaciones) {
   return pqrsRepo.actualizarEstado(pqrsId, estado, observaciones);
 }
 
-module.exports = { crear, consultarPorRadicado, listar, actualizarEstado };
+async function eliminar(pqrsId) {
+  return pqrsRepo.eliminar(pqrsId);
+}
+
+module.exports = { crear, consultarPorRadicado, listar, actualizarEstado, eliminar };

@@ -17,4 +17,12 @@ async function actualizarEstado(req, res, next) {
   } catch (err) { next(err); }
 }
 
-module.exports = { listar, actualizarEstado };
+async function eliminar(req, res, next) {
+  try {
+    const { id } = req.params;
+    await leadService.eliminar(id);
+    res.json({ mensaje: 'Lead eliminado' });
+  } catch (err) { next(err); }
+}
+
+module.exports = { listar, actualizarEstado, eliminar };

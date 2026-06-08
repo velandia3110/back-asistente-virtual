@@ -58,10 +58,15 @@ async function actualizarEstado(pqrsId, estado, observaciones = null) {
   return db('pqrs').where({ id_pqrs: pqrsId }).update(update);
 }
 
+async function eliminar(pqrsId) {
+  return db('pqrs').where({ id_pqrs: pqrsId }).delete();
+}
+
 module.exports = {
   crear,
   buscarPorRadicado,
   buscarPorClienteId,
   listar,
   actualizarEstado,
+  eliminar,
 };
